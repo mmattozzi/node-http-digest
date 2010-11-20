@@ -1,8 +1,14 @@
+**
+** Forked and modified https://github.com/codehero/node-http-digest
+** to use native javascript md5 algorithm. No longer has any compiled c dependencies. 
+**
+
+Original README:
+
 Intent is to add Auth Digest support to node.js. Test against personal lighttpd server
 
 Dependencies:
 -node 0.1.90 or higher
--hashlib
 
 Usage Notes:
 -Similar to http.Client. only export is
