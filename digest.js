@@ -31,9 +31,9 @@ DigestClient.prototype.request = function(method, path, request_headers){
 	var self = this;
 
 	/* If method omitted, assume it was GET. */
-  if(typeof(path) != "string"){
-    headers = path;
-    url = method;
+  if(typeof(path) !== "string"){
+    var headers = path;
+    var url = method;
     method = "GET";
   }
 
@@ -46,16 +46,16 @@ DigestClient.prototype.request = function(method, path, request_headers){
 
 		/* Calculate 8 digit hex nc value. */
 		var nc = self.nonceCount.toString(16);
-		while(nc.length < 8)
+		while(nc.length < 8) {
 			nc = "0" + nc;
+		}
 
 		HA2 = md5(HA2);
 
 		/* Calculate middle portion of undigested 'response' */
 		var middle = self.nonce;
-		if(self.qop == "auth" || self.qop == "auth-int"){
-			middle += ":" + nc + ":" + self.cnonce
-				+ ":" + self.qop;
+		if(self.qop === "auth" || self.qop === "auth-int"){
+			middle += ":" + nc + ":" + self.cnonce + ":" + self.qop;
 		}
 
 		/* Digest the response. */
@@ -63,44 +63,46 @@ DigestClient.prototype.request = function(method, path, request_headers){
 		response = md5(response);
 
 		/* Assemble the header value. */
-		var hdrVal = "Digest username=\"" + self.username
-			+ "\", realm=\"" + self.realm
-			+ "\", nonce=\"" + self.nonce
-			+ "\", uri=\"" + path + "\"";
+		var hdrVal = "Digest username=\"" + self.username +
+			"\", realm=\"" + self.realm +
+			"\", nonce=\"" + self.nonce +
+			"\", uri=\"" + path + "\"";
 
 		if(self.qop){
-			hdrVal += ", qop=" + self.qop
-				+ ", nc=" + nc
-				+ ", cnonce=\"" + self.cnonce + '"';
+			hdrVal += ", qop=" + self.qop +
+				", nc=" + nc +
+				", cnonce=\"" + self.cnonce + '"';
 		}
 
 		hdrVal += ", response=\"" + response + '"';
-		if(self.opaque)
+		if(self.opaque) {
 			hdrVal += ", opaque=\"" + self.opaque + '"';
+		}
 
-		request_headers["authorization"] = hdrVal;
+		request_headers.authorization = hdrVal;
 	}
 
-	req = self.client.request(method, path, request_headers);
+	var req = self.client.request(method, path, request_headers);
 
 	req.addListener("response", function(response){
 		/* If not authorized, then probably need to update nonce. */
-		if(401 == response.statusCode){
+		if(401 === response.statusCode){
 			var a = response.headers["www-authenticate"];
 			if(a){
 				/* Update server values. */
-				for(v in wwwAuthMap){
+				for(var v in wwwAuthMap){
 					var idx = a.indexOf(wwwAuthMap[v]);
-					if(idx != -1){
+					if(idx !== -1){
 						idx += wwwAuthMap[v].length;
 
-						var e = (v != "stale") ? a.indexOf('"', idx) : a.indexOf(',', idx);
+						var e = (v !== "stale") ? a.indexOf('"', idx) : a.indexOf(',', idx);
 
 						/* Correct for the odd ball stale (has no quotes..)
 						 * FIXME handle badly formatted string? */
-						if(-1 == e){
-							if("stale" == v)
+						if(-1 === e){
+							if("stale" === v) {
 								e = a.length;
+							}
 						}
 
 						self[v] = a.substring(idx, e);
@@ -112,14 +114,14 @@ DigestClient.prototype.request = function(method, path, request_headers){
 			}
 
 			/* Verify correct realm. */
-			if(self.expectedRealm && self.realm != self.expectedRealm){
+			if(self.expectedRealm && self.realm !== self.expectedRealm){
 				/* FIXME realm mismatch! */
 			}
 
 			/* If have previous auth info, then try to revalidate. */
 			if(self.HA1){
 				/* If did not recv stale, then have bad credentials. */
-				if(null == self.stale){
+				if(null === self.stale){
 					/* FIXME some kind of exception? */
 				}
 			}
@@ -130,8 +132,9 @@ DigestClient.prototype.request = function(method, path, request_headers){
 			}
 
 			/* HACK FIXME Just dropping back to auth! */
-			if(self.qop)
+			if(self.qop) {
 				self.qop = "auth";
+			}
 
 			/* Start with 0 nonceCount. */
 			self.nonceCount = 0;
@@ -149,9 +152,9 @@ DigestClient.prototype.request = function(method, path, request_headers){
 	});
 
 	return req;
-}
+};
 
 exports.createClient = function(port, host, username, password, expectedRealm){
 	var c = http.createClient(port, host);
 	return new DigestClient(c, username, password);
-}
+};
