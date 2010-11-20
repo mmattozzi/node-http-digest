@@ -1,21 +1,28 @@
+/*
+ * test.webdav.org seems to be a random server on the web that was designed to 
+ * test webdav clients. We can use this to test digest auth, although even 
+ * when auth succeeds, only a 404 is returned. 
+ */
+
 var digest = require("./digest");
 var sys = require("sys");
 
-var digestClient = digest.createClient(2316, "localhost", "admin", "admin");
+var digestClient = digest.createClient(80, "test.webdav.org", "user1", "user1");
 var hdrs = {
 	"accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-	"host":"localhost:2316",
+	"host":"test.webdav.org",
 	"accept-encoding":"gzip,deflate"
 };
 
 var maxIterations = 3;
 
-function makeReq(i){
-	if(i == maxIterations)
+function makeReq(i) {
+	if (i === maxIterations) {
 		return;
+	}
 	sys.puts("makeReq " + i);
 
-	var req = digestClient.request("GET", "/", hdrs);
+	var req = digestClient.request("GET", "/auth-digest/", hdrs);
 	req.addListener("response", function(response){
 		sys.puts("iteration: " + i);
 		sys.puts('STATUS: ' + response.statusCode);
