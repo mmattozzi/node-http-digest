@@ -1,5 +1,5 @@
 var http = require("http");
-var hashlib = require("hashlib");
+var md5 = require("./md5");
 
 var wwwAuthMap = {
 	"realm" : "realm=\"",
@@ -15,9 +15,7 @@ function DigestClient(client, username, password, expectedRealm){
 	self.username = username;
 	self.password = password;
 	self.expectedRealm = expectedRealm;
-
-	/* FIXME This is bad, should use a random cnonce! */
-	self.cnonce = "cdb0e64d1ded02dd";
+	self.cnonce = md5(Math.random() + "").substring(0,16);
 
 	/* Initialize qop */
 	self.qop = null;
@@ -51,7 +49,7 @@ DigestClient.prototype.request = function(method, path, request_headers){
 		while(nc.length < 8)
 			nc = "0" + nc;
 
-		HA2 = hashlib.md5(HA2);
+		HA2 = md5(HA2);
 
 		/* Calculate middle portion of undigested 'response' */
 		var middle = self.nonce;
@@ -62,7 +60,7 @@ DigestClient.prototype.request = function(method, path, request_headers){
 
 		/* Digest the response. */
 		var response = self.HA1 + ":" + middle + ":" + HA2;
-		response = hashlib.md5(response);
+		response = md5(response);
 
 		/* Assemble the header value. */
 		var hdrVal = "Digest username=\"" + self.username
@@ -128,7 +126,7 @@ DigestClient.prototype.request = function(method, path, request_headers){
 			else{
 				/* Initialize HA1. */
 				self.HA1 = self.username + ":" + self.realm + ":" + self.password;
-				self.HA1 = hashlib.md5(self.HA1);
+				self.HA1 = md5(self.HA1);
 			}
 
 			/* HACK FIXME Just dropping back to auth! */
